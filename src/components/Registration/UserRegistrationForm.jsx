@@ -1,35 +1,52 @@
-// Removed unused React import for a cleaner, modern approach
+/**
+ * UserRegistrationForm
+ * Clean, validated form that triggers the atomic RTDB registration.
+ */
 const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSuccess }) => {
   
   const handleSubmit = async (e) => {
     e.preventDefault();
+    
+    // Safety Check: Ensure a device was actually passed from the previous step
+    if (!selectedDevice?.id) return;
+
     const formData = new FormData(e.target);
     const data = Object.fromEntries(formData);
     
-    // The "userInfo" object will now automatically contain:
-    // firstName, middleName, lastName, email, mobile, barangay, street
+    // Separation: Nickname goes to the device tree, userInfo goes to the owners tree
     const { userDeviceName, ...userInfo } = data;
 
+    // Trigger the atomic registration logic
     const result = await register(selectedDevice.id, userDeviceName, userInfo);
     
     if (result.success) {
-      onSuccess();
+      onSuccess(result.ownerId);
     }
   };
 
   return (
-    <form onSubmit={handleSubmit} className="space-y-5">
+    <form onSubmit={handleSubmit} className="space-y-5 animate-in fade-in duration-500">
+      
+      {/* HEADER: Safety Visual Check */}
+      <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
+        <p className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Hardware Selected</p>
+        <p className="text-sm font-bold text-blue-900 truncate">
+          {selectedDevice.id} <span className="font-normal opacity-60">({selectedDevice.deviceName || 'Fresh Node'})</span>
+        </p>
+      </div>
+
       {/* Device Section */}
       <div className="space-y-2">
         <label className="text-sm font-bold text-gray-700 ml-1">Device Nickname</label>
         <input 
           name="userDeviceName" 
-          placeholder={selectedDevice.deviceName || "e.g. My ESP32 Node"} 
-          className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 transition-all outline-none" 
+          required
+          placeholder="e.g. Garden ESP32" 
+          className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
         />
       </div>
       
-      {/* Name Section */}
+      {/* Name Section - Grid for Clean Desktop Layout */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">First Name</label>
@@ -37,7 +54,7 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Middle Name</label>
-          <input name="middleName" placeholder="(Optional)" className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="middleName" placeholder="(Opt)" className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Last Name</label>
@@ -69,19 +86,25 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
         </div>
       </div>
 
-      {/* Error Message */}
+      {/* Error Message with Shake Animation */}
       {error && (
-        <div className="p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100 font-medium animate-shake">
+        <div className="p-4 bg-red-50 text-red-600 text-sm rounded-2xl border border-red-100 font-medium animate-bounce">
           {error}
         </div>
       )}
 
-      {/* Submit Button */}
+      {/* Submit Button with Loading State */}
       <button 
+        type="submit"
         disabled={loading}
-        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-200 hover:bg-blue-700 transition-all active:scale-95 disabled:bg-gray-300 disabled:shadow-none mt-4"
+        className="w-full py-4 bg-blue-600 text-white rounded-2xl font-black text-lg shadow-xl shadow-blue-100 hover:bg-blue-700 transition-all active:scale-95 disabled:bg-gray-300 disabled:shadow-none mt-4 flex items-center justify-center gap-2"
       >
-        {loading ? "Processing..." : "Finalize Setup"}
+        {loading ? (
+          <>
+            <div className="w-5 h-5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
+            Linking Hardware...
+          </>
+        ) : "Finalize Registration"}
       </button>
     </form>
   );

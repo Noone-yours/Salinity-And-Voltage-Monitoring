@@ -1,43 +1,64 @@
 import { useState, useEffect } from 'react';
-import { db } from '../firebase';
-import { collection, query, where, onSnapshot } from 'firebase/firestore';
+import { rtdb } from '../firebase'; // Ensure this points to Realtime Database
+import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 
+/**
+ * useAvailableDevices
+ * Custom hook to discover "Fresh" hardware nodes ready for registration.
+ */
 export const useAvailableDevices = () => {
   const [devices, setDevices] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
 
   useEffect(() => {
-    let isMounted = true; // Flag to prevent state updates on unmounted components
+    let isMounted = true;
 
-    // Logic: Fetch only devices that don't have an owner yet
-    const q = query(collection(db, "devices"), where("ownerId", "==", null));
-    
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        if (!isMounted) return; // Stop if the user navigated away
+    // 1. Server-Side Filtering Logic
+    // Only fetch nodes where ownerId is explicitly null
+    const devicesRef = ref(rtdb, 'devices');
+    const availableQuery = query(
+      devicesRef, 
+      orderByChild('ownerId'), 
+      equalTo(null)
+    );
 
-        try {
-        const deviceList = snapshot.docs.map(doc => ({
-          id: doc.id,
-          ...doc.data()
-        }));
-        setDevices(deviceList);
-        setLoading(false);
+    // 2. Real-time Subscription
+    const unsubscribe = onValue(availableQuery, (snapshot) => {
+      if (!isMounted) return;
+
+      try {
+        const data = snapshot.val();
+        
+        if (!data) {
+          setDevices([]); 
+        } else {
+          // Transformation: Convert Firebase object-map to a clean UI Array
+          const deviceList = Object.entries(data).map(([id, val]) => ({
+            id, // This is the MAC address/Device ID
+            ...val
+          }));
+          setDevices(deviceList);
+        }
+        setError(null);
       } catch (err) {
-        setError("Failed to fetch devices.");
+        console.error("RTDB Data Processing Error:", err);
+        setError("Data link established, but failed to parse hardware list.");
+      } finally {
         setLoading(false);
       }
     }, (err) => {
-        if (!isMounted) return;
-        setError(err.message);
-        setLoading(false);
+      // Security/Network Error Handling
+      if (!isMounted) return;
+      setError(err.message);
+      setLoading(false);
     });
 
+    // 3. Cleanup: Prevents memory leaks and state updates on unmounted components
     return () => {
-      isMounted = false; // Set flag to false
-      unsubscribe();     // Unsubscribe from Firebase
+      isMounted = false;
+      unsubscribe();
     };
-    
   }, []);
 
   return { devices, loading, error };

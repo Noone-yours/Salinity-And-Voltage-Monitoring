@@ -1,93 +1,83 @@
+import { useCallback } from 'react';
+import { rtdb } from '../firebase';
+import { ref, get, update, query, orderByChild, equalTo, serverTimestamp } from 'firebase/database';
+
 const register = useCallback(async (macAddress, userDeviceName, userInfo) => {
   setLoading(true);
   setError(null);
 
   try {
-    // 1. Destructure and Normalize input data
-    const { 
-      firstName, 
-      middleName = "", 
-      lastName, 
-      email, 
-      mobile, 
-      barangay, 
-      street 
-    } = userInfo;
-
+    // 1. Data Normalization
+    const { email } = userInfo;
     const normalizedEmail = email.toLowerCase().trim();
-    const cleanFirstName = firstName.trim();
-    const cleanMiddleName = middleName.trim();
-    const cleanLastName = lastName.trim();
 
-    // 2. FETCH the existing device record (To see the default name from ESP32)
-    const deviceRef = doc(db, 'devices', macAddress);
-    const deviceSnap = await getDoc(deviceRef);
+    // 2. Fetch Device Data & Safety Check (Race Condition Prevention)
+    const deviceRef = ref(rtdb, `devices/${macAddress}`);
+    const deviceSnap = await get(deviceRef);
 
     if (!deviceSnap.exists()) {
-      throw new Error("This MAC Address is not recognized by the system.");
+      throw new Error("Hardware ID not found in registry.");
     }
 
-    const deviceData = deviceSnap.data();
+    const deviceData = deviceSnap.val();
 
-    // Safety: Ensure it's not already owned
+    // Check if the device is already owned
     if (deviceData.ownerId) {
-       throw new Error("This device is already registered to another user.");
+      throw new Error("This device is already registered to another account.");
     }
 
-    // 3. LOGIC: Use User's Name OR Fallback to ESP32's Default Name
-    // If the user didn't type a name, we use what the ESP32 sent (deviceData.deviceName)
-    const finalDeviceName = userDeviceName?.trim() || deviceData.deviceName || "Unnamed Device";
-
-    // 4. CHECK for existing Owner profile
-    const ownersRef = collection(db, 'owners');
-    const q = query(ownersRef, where("email", "==", normalizedEmail));
-    const ownerQuerySnap = await getDocs(q);
+    // 3. Email Uniqueness Check (Server-Side Filtering)
+    const ownersRef = ref(rtdb, 'owners');
+    const emailQuery = query(ownersRef, orderByChild('email'), equalTo(normalizedEmail));
+    const ownerSnapshot = await get(emailQuery);
 
     let ownerId;
-    if (!ownerQuerySnap.empty) {
-      ownerId = ownerQuerySnap.docs[0].id;
+    let existingData = {};
+
+    if (ownerSnapshot.exists()) {
+      // Logic: If user exists, link the new device to their existing ID
+      const entries = Object.entries(ownerSnapshot.val());
+      ownerId = entries[0][0]; // The unique user key
+      existingData = entries[0][1];
     } else {
-      ownerId = `ID-${Date.now()}`;
+      // Logic: New user profile
+      ownerId = `user_${Date.now()}`;
     }
 
-    // 5. EXECUTE the link (Atomic Update)
-    const ownerRef = doc(db, 'owners', ownerId);
+    // 4. Logic: Use custom nickname or fallback to hardware default
+    const finalDeviceName = userDeviceName?.trim() || deviceData.deviceName || "Unnamed Node";
 
-    
+    // 5. ATOMIC UPDATE (Multi-Path)
+    // 
+    const updates = {};
 
-    await Promise.all([
-      // Table: owners
-      setDoc(ownerRef, {
-        ownerId,
-        email: normalizedEmail,
-        firstName: cleanFirstName,
-        middleName: cleanMiddleName,
-        lastName: cleanLastName,
-        fullName: `${cleanFirstName} ${cleanMiddleName ? cleanMiddleName + ' ' : ''}${cleanLastName}`,
-        mobile: mobile.trim(),
-        address: { 
-          barangay: barangay.trim(), 
-          street: street.trim() 
-        },
-        updatedAt: serverTimestamp()
-      }, { merge: true }),
+    // Update Device Tree
+    updates[`/devices/${macAddress}/ownerId`] = ownerId;
+    updates[`/devices/${macAddress}/deviceName`] = finalDeviceName;
+    updates[`/devices/${macAddress}/registeredAt`] = serverTimestamp();
+    updates[`/devices/${macAddress}/isConfigured`] = true;
 
-      // Table: devices
-      setDoc(deviceRef, {
-        deviceName: finalDeviceName, // This is either the User Name or the DEVICE-XXXX name
-        ownerId: ownerId,
-        registeredAt: serverTimestamp(),
-        status: 'active',
-        isConfigured: true // Useful flag to distinguish from warehouse stock
-      }, { merge: true })
-    ]);
+    // Update/Merge Owner Tree
+    updates[`/owners/${ownerId}`] = {
+      ...existingData, 
+      ...userInfo, // Overwrites fields with latest info from form
+      ownerId,
+      email: normalizedEmail,
+      updatedAt: serverTimestamp()
+    };
+
+    // Execute all updates simultaneously (Safety check: all or nothing)
+    await update(ref(rtdb), updates);
 
     return { success: true, ownerId };
 
   } catch (err) {
+    console.error("Registration Error:", err);
     setError(err.message);
-    return { success: false };
+    return { success: false, error: err.message };
   } finally {
     setLoading(false);
   }
 }, []);
+
+return { register, loading, error };
