@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { rtdb } from '../firebase'; // Ensure this points to Realtime Database
+import { db } from '../services/firebaseConfig'; // Ensure this points to Realtime Database
 import { ref, onValue, query, orderByChild, equalTo } from 'firebase/database';
 
 /**
@@ -16,7 +16,7 @@ export const useAvailableDevices = () => {
 
     // 1. Server-Side Filtering Logic
     // Only fetch nodes where ownerId is explicitly null
-    const devicesRef = ref(rtdb, 'devices');
+    const devicesRef = ref(db, 'devices');
     const availableQuery = query(
       devicesRef, 
       orderByChild('ownerId'), 
