@@ -31,7 +31,7 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
       <div className="bg-blue-50 p-4 rounded-2xl border border-blue-100">
         <p className="text-[10px] font-black text-blue-500 uppercase tracking-tighter">Hardware Selected</p>
         <p className="text-sm font-bold text-blue-900 truncate">
-          {selectedDevice.id} <span className="font-normal opacity-60">({selectedDevice.deviceName || 'Fresh Node'})</span>
+          Hardware Ready <span className="font-normal opacity-60">({selectedDevice.deviceName || 'Fresh Node'})</span>
         </p>
       </div>
 
@@ -42,7 +42,7 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
           name="userDeviceName" 
           required
           placeholder="e.g. Garden ESP32" 
-          className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
+          className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none transition-all" 
         />
       </div>
       
@@ -50,15 +50,15 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">First Name</label>
-          <input name="firstName" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="firstName" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Middle Name</label>
-          <input name="middleName" placeholder="(Opt)" className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="middleName" placeholder="(Optional)" className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Last Name</label>
-          <input name="lastName" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="lastName" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
       </div>
 
@@ -66,11 +66,11 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Email Address</label>
-          <input name="email" type="email" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="email" type="email" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Mobile Number</label>
-          <input name="mobile" type="tel" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="mobile" type="tel" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
       </div>
 
@@ -78,11 +78,11 @@ const UserRegistrationForm = ({ selectedDevice, register, loading, error, onSucc
       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Barangay</label>
-          <input name="barangay" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="barangay" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
         <div className="space-y-2">
           <label className="text-sm font-bold text-gray-700 ml-1">Street / House No.</label>
-          <input name="street" required className="w-full p-4 bg-gray-50 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
+          <input name="street" required className="w-full p-4 bg-gray-100 border-none rounded-2xl focus:ring-2 focus:ring-blue-500 outline-none" />
         </div>
       </div>
 
